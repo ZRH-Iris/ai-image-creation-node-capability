@@ -1,0 +1,29 @@
+{
+  "name": "commercial-image-router-full-runtime",
+  "version": "1.0.0",
+  "runtime_root_default": "~/.hermes-image-runtime",
+  "models": {
+    "juggernaut_xl_v9": {
+      "path": "comfy-workspace/models/checkpoints/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors",
+      "url": "https://huggingface.co/RunDiffusion/Juggernaut-XL-v9/resolve/main/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors?download=true",
+      "sha256": "c9e3e68f89b8e38689e1097d4be4573cf308de4e3fd044c64ca697bdb4aa8bca",
+      "size": 7105348188
+    },
+    "sdxl_base": {
+      "path": "comfy-workspace/models/checkpoints/sd_xl_base_1.0.safetensors",
+      "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors?download=true"
+    },
+    "sam_vit_b": {
+      "path": "image-models/sam/sam_vit_b_01ec64.pth",
+      "url": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth",
+      "sha256": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912",
+      "size": 375042383
+    },
+    "upscale_4x_ultrasharp": {
+      "path": "comfy-workspace/models/upscale_models/4x-UltraSharp.pth",
+      "url": "https://huggingface.co/lokCX/4x-Ultrasharp/resolve/main/4x-UltraSharp.pth?download=true",
+      "sha256": "a5812231fc936b42af08a5edba784195495d303d5b3248c24489ef0c4021fe01",
+      "size": 66961958
+    }
+  }
+}

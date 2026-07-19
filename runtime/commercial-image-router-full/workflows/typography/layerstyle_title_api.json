@@ -1,0 +1,122 @@
+{
+  "1": {
+    "class_type": "LayerUtility: ColorImage",
+    "inputs": {
+      "width": 1080,
+      "height": 1350,
+      "color": "#071225"
+    }
+  },
+  "2": {
+    "class_type": "LayerUtility: TextImage",
+    "inputs": {
+      "text": "AI图片制作",
+      "font_file": "Alibaba-PuHuiTi-Heavy.ttf",
+      "spacing": -2,
+      "leading": 0,
+      "horizontal_border": 70,
+      "vertical_border": 80,
+      "scale": 118,
+      "variation_range": 0,
+      "variation_seed": 123,
+      "layout": "horizontal",
+      "width": 1080,
+      "height": 1350,
+      "text_color": "#FFFFFF",
+      "background_color": "#000000"
+    }
+  },
+  "3": {
+    "class_type": "LayerStyle: GradientOverlay",
+    "inputs": {
+      "background_image": [
+        "1",
+        0
+      ],
+      "layer_image": [
+        "2",
+        0
+      ],
+      "invert_mask": true,
+      "blend_mode": "normal",
+      "opacity": 100,
+      "start_color": "#FFF2A6",
+      "start_alpha": 255,
+      "end_color": "#FF6A2A",
+      "end_alpha": 255,
+      "angle": -8
+    }
+  },
+  "4": {
+    "class_type": "LayerStyle: Stroke",
+    "inputs": {
+      "background_image": [
+        "3",
+        0
+      ],
+      "layer_image": [
+        "2",
+        0
+      ],
+      "invert_mask": true,
+      "blend_mode": "normal",
+      "opacity": 100,
+      "stroke_grow": 1,
+      "stroke_width": 9,
+      "blur": 0,
+      "stroke_color": "#FFFFFF"
+    }
+  },
+  "5": {
+    "class_type": "LayerStyle: DropShadow",
+    "inputs": {
+      "background_image": [
+        "4",
+        0
+      ],
+      "layer_image": [
+        "2",
+        0
+      ],
+      "invert_mask": true,
+      "blend_mode": "normal",
+      "opacity": 72,
+      "distance_x": 18,
+      "distance_y": 24,
+      "grow": 6,
+      "blur": 24,
+      "shadow_color": "#000000"
+    }
+  },
+  "6": {
+    "class_type": "LayerStyle: OuterGlow",
+    "inputs": {
+      "background_image": [
+        "5",
+        0
+      ],
+      "layer_image": [
+        "2",
+        0
+      ],
+      "invert_mask": true,
+      "blend_mode": "screen",
+      "opacity": 62,
+      "brightness": 4,
+      "glow_range": 38,
+      "blur": 35,
+      "light_color": "#FFF3A1",
+      "glow_color": "#FF7A1A"
+    }
+  },
+  "7": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "6",
+        0
+      ],
+      "filename_prefix": "ai_image_creation_layerstyle_title"
+    }
+  }
+}

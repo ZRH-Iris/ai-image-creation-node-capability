@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+.DS_Store
+.env
+*.log
+
+# Never commit model weights or generated outputs
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.bin
+*.gguf
+outputs/
+*_outputs/
+smoke-test-output/
+commercial-image-runtime-tests/
+node_modules/

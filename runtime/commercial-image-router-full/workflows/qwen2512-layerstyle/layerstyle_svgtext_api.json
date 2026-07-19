@@ -1,0 +1,125 @@
+{
+  "1": {
+    "class_type": "LayerUtility: ColorImage",
+    "inputs": {
+      "width": 1080,
+      "height": 1350,
+      "color": "#071225"
+    }
+  },
+  "2": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "text_layer_ai_image_creation.png"
+    }
+  },
+  "3": {
+    "class_type": "LayerStyle: GradientOverlay",
+    "inputs": {
+      "background_image": [
+        "1",
+        0
+      ],
+      "layer_image": [
+        "2",
+        0
+      ],
+      "invert_mask": false,
+      "blend_mode": "normal",
+      "opacity": 100,
+      "start_color": "#FFF2A6",
+      "start_alpha": 255,
+      "end_color": "#FF6A2A",
+      "end_alpha": 255,
+      "angle": -8,
+      "layer_mask": [
+        "2",
+        1
+      ]
+    }
+  },
+  "4": {
+    "class_type": "LayerStyle: Stroke",
+    "inputs": {
+      "background_image": [
+        "3",
+        0
+      ],
+      "layer_image": [
+        "2",
+        0
+      ],
+      "invert_mask": false,
+      "blend_mode": "normal",
+      "opacity": 100,
+      "stroke_grow": 1,
+      "stroke_width": 10,
+      "blur": 0,
+      "stroke_color": "#FFFFFF",
+      "layer_mask": [
+        "2",
+        1
+      ]
+    }
+  },
+  "5": {
+    "class_type": "LayerStyle: DropShadow",
+    "inputs": {
+      "background_image": [
+        "4",
+        0
+      ],
+      "layer_image": [
+        "2",
+        0
+      ],
+      "invert_mask": false,
+      "blend_mode": "normal",
+      "opacity": 78,
+      "distance_x": 18,
+      "distance_y": 24,
+      "grow": 8,
+      "blur": 30,
+      "shadow_color": "#000000",
+      "layer_mask": [
+        "2",
+        1
+      ]
+    }
+  },
+  "6": {
+    "class_type": "LayerStyle: OuterGlow",
+    "inputs": {
+      "background_image": [
+        "5",
+        0
+      ],
+      "layer_image": [
+        "2",
+        0
+      ],
+      "invert_mask": false,
+      "blend_mode": "screen",
+      "opacity": 62,
+      "brightness": 4,
+      "glow_range": 42,
+      "blur": 38,
+      "light_color": "#FFF3A1",
+      "glow_color": "#FF7A1A",
+      "layer_mask": [
+        "2",
+        1
+      ]
+    }
+  },
+  "7": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "6",
+        0
+      ],
+      "filename_prefix": "ai_image_creation_layerstyle_svgtext"
+    }
+  }
+}

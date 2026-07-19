@@ -1,0 +1,8 @@
+{
+  "1": {"class_type":"LoadImage", "inputs":{"image":"qwen_bg.png"}},
+  "2": {"class_type":"LoadImage", "inputs":{"image":"layerstyle_title.png"}},
+  "3": {"class_type":"ImageColorToMask", "inputs":{"image":["2",0], "color":0}},
+  "4": {"class_type":"InvertMask", "inputs":{"mask":["3",0]}},
+  "5": {"class_type":"ImageCompositeMasked", "inputs":{"destination":["1",0], "source":["2",0], "x":0, "y":0, "resize_source":true, "mask":["4",0]}},
+  "6": {"class_type":"SaveImage", "inputs":{"images":["5",0], "filename_prefix":"ai_image_creation_qwen_layerstyle_poc"}}
+}

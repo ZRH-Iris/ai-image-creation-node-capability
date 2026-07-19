@@ -1,0 +1,28 @@
+name: ai-image-creation-node-capability
+display_name: AI图片制作
+version: 1.0.0
+description: 用户提供图片、商品图、人物照片、参考风格、标题文案或一句话需求后，Hermes 自动选择路线完成高质量图片生成、改图、商品图、海报、封面图、高清放大、换背景、抠图和中文排版。
+entry: AUTO_INSTALL_FOR_HERMES.md
+installer: installer/install_commercial_image_router.py
+runtime: runtime/commercial-image-router-full/setup_runtime.sh
+skill: commercial-image-router
+usage:
+  trigger_examples:
+    - 帮我做一张封面图
+    - 我发一张商品图，请做成商品宣传海报
+    - 把这张图片放大变清晰
+    - 给这张图换一个高级背景，商品不要变形
+    - 帮我做一张活动宣传图
+    - 修改这张图上的文字
+  required_inputs:
+    - 图片处理任务可以只提供一句需求
+    - 商品图建议提供清晰原图
+    - 宣传图/海报建议提供标题、文案、尺寸和风格
+    - 改图任务需要说明哪些内容必须保持不变
+safety:
+  - 不制作冒充他人、欺骗身份或违法营销图片
+  - 不未经授权使用他人肖像、品牌、商标或受版权保护素材
+notes:
+  - 商品主体默认保持真实，不让模型随意重画
+  - 中文文案默认由排版层处理，不依赖模型直接生成中文
+  - 对外发布图片必须做清晰度、裁切、文字可读性和主体一致性检查
