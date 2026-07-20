@@ -252,7 +252,27 @@ download_file(){
   dest="$(dest_for_rel "$rel")"
   if [ "$DRY_RUN" = "1" ]; then
     mkdir -p "$(dirname "$dest")"
-    warn "[dry-run] would download or reuse $name at $dest"
+    if file_sha_ok "$dest" "$sha"; then
+      warn "[dry-run] $name already present at $dest; would reuse it"
+      return
+    fi
+    local filename subdir candidate root
+    filename="$(basename "$rel")"
+    subdir="$(dirname "${rel#comfy-workspace/models/}")"
+    while IFS= read -r root; do
+      [ -n "$root" ] || continue
+      candidate="$root/$subdir/$filename"
+      if [ "$candidate" != "$dest" ] && file_sha_ok "$candidate" "$sha"; then
+        warn "[dry-run] $name already installed at $candidate; would reuse it at $dest"
+        return
+      fi
+      candidate="$root/$filename"
+      if [ "$candidate" != "$dest" ] && file_sha_ok "$candidate" "$sha"; then
+        warn "[dry-run] $name already installed at $candidate; would reuse it at $dest"
+        return
+      fi
+    done < <(model_search_roots)
+    warn "[dry-run] would download $name at $dest"
     return
   fi
   mkdir -p "$(dirname "$dest")"
