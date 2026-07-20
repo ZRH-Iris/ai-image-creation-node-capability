@@ -4,7 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HERMES_HOME="${HERMES_HOME:-$HOME/.hermes}"
 RUNTIME="${HERMES_IMAGE_RUNTIME:-$HOME/.hermes-image-runtime}"
-COMFY="$RUNTIME/comfy-workspace"
+# If the user already has a ComfyUI workspace, reuse it:
+#   COMFY_WORKSPACE=/path/to/ComfyUI bash setup_runtime.sh
+COMFY="${COMFY_WORKSPACE:-$RUNTIME/comfy-workspace}"
 VENV="$RUNTIME/comfy-venv"
 HELPERS="$RUNTIME/comfy-helpers"
 LAYOUT="$RUNTIME/image-layout"
@@ -183,25 +185,86 @@ url_for(){
   printf '%s' "$url"
 }
 
+dest_for_rel(){
+  local rel="$1"
+  if [[ "$rel" == comfy-workspace/* ]]; then
+    printf '%s/%s\n' "$COMFY" "${rel#comfy-workspace/}"
+  else
+    printf '%s/%s\n' "$RUNTIME" "$rel"
+  fi
+}
+
+model_search_roots(){
+  # Extra dirs can be passed as colon-separated paths, e.g.:
+  # COMFY_MODEL_DIRS=/mnt/models:/data/ComfyUI/models
+  if [ -n "${COMFY_MODEL_DIRS:-}" ]; then
+    IFS=':' read -r -a extra_roots <<< "$COMFY_MODEL_DIRS"
+    for d in "${extra_roots[@]}"; do [ -n "$d" ] && printf '%s\n' "$d"; done
+  fi
+  printf '%s/models\n' "$COMFY"
+  printf '%s/comfy-workspace/models\n' "$RUNTIME"
+  printf '%s/.hermes-image-runtime/comfy-workspace/models\n' "$HOME"
+  printf '%s/ComfyUI/models\n' "$HOME"
+  printf '%s/comfy-workspace/models\n' "$HOME"
+}
+
+file_sha_ok(){
+  local file="$1" sha="${2:-}"
+  [ -s "$file" ] || return 1
+  if [ -n "$sha" ]; then
+    local got
+    got="$(sha256sum "$file" | awk '{print $1}')"
+    [ "$got" = "$sha" ] || return 1
+  fi
+  return 0
+}
+
+try_reuse_existing_model(){
+  local name="$1" rel="$2" dest="$3" sha="${4:-}"
+  local filename subdir candidate root
+  filename="$(basename "$rel")"
+  subdir="$(dirname "${rel#comfy-workspace/models/}")"
+  while IFS= read -r root; do
+    [ -n "$root" ] || continue
+    candidate="$root/$subdir/$filename"
+    [ "$candidate" = "$dest" ] && continue
+    if file_sha_ok "$candidate" "$sha"; then
+      mkdir -p "$(dirname "$dest")"
+      ln -sf "$candidate" "$dest" 2>/dev/null || cp -f "$candidate" "$dest"
+      log "$name already installed at $candidate; reused it at $dest"
+      return 0
+    fi
+    candidate="$root/$filename"
+    [ "$candidate" = "$dest" ] && continue
+    if file_sha_ok "$candidate" "$sha"; then
+      mkdir -p "$(dirname "$dest")"
+      ln -sf "$candidate" "$dest" 2>/dev/null || cp -f "$candidate" "$dest"
+      log "$name already installed at $candidate; reused it at $dest"
+      return 0
+    fi
+  done < <(model_search_roots)
+  return 1
+}
+
 download_file(){
   local name="$1" rel="$2" url="$3" sha="${4:-}"
-  local dest="$RUNTIME/$rel"
+  local dest
+  dest="$(dest_for_rel "$rel")"
   if [ "$DRY_RUN" = "1" ]; then
     mkdir -p "$(dirname "$dest")"
-    warn "[dry-run] would download $name to $dest"
+    warn "[dry-run] would download or reuse $name at $dest"
     return
   fi
   mkdir -p "$(dirname "$dest")"
-  if [ -s "$dest" ]; then
-    if [ -n "$sha" ]; then
-      local got
-      got="$(sha256sum "$dest" | awk '{print $1}')"
-      if [ "$got" = "$sha" ]; then log "$name already present and sha256 ok"; return; fi
-      warn "$name exists but sha mismatch; re-downloading"
-    else
-      log "$name already present"
-      return
-    fi
+  if file_sha_ok "$dest" "$sha"; then
+    if [ -n "$sha" ]; then log "$name already present and sha256 ok"; else log "$name already present"; fi
+    return
+  fi
+  if [ -s "$dest" ] && [ -n "$sha" ]; then
+    warn "$name exists but sha mismatch; checking other installed copies before re-downloading"
+  fi
+  if try_reuse_existing_model "$name" "$rel" "$dest" "$sha"; then
+    return
   fi
   local final_url
   final_url="$(url_for "$url")"

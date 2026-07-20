@@ -47,6 +47,8 @@ python3 <(curl -fsSL https://raw.githubusercontent.com/ZRH-Iris/ai-image-creatio
 
 普通用户不需要理解或选择这些内容。安装器会自动处理。
 
+如果当前 Hermes/节点已经有可复用的 ComfyUI 或模型文件，安装器应优先复用已有内容，不重复下载；只有找不到可用模型或校验不通过时才重新下载。
+
 ## 什么时候再装增强能力
 
 默认安装完成后，先让用户开始做图。

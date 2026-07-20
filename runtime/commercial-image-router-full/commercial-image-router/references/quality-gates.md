@@ -7,11 +7,12 @@ Use this checklist before sending any image file. The user has repeatedly reject
 Before delivery:
 
 1. **Open the final file visually** with `vision_analyze` or browser screenshot.
-2. **Check exact requirements**: subject, action, date, place, audience, copy, ratio.
-3. **Check artifacts**: watermarks, random letters, extra limbs, broken hands, distorted eyes, fake text, strange objects.
-4. **Check composition**: no important content cropped, no text collision, no unreadable contrast, no clutter.
-5. **Check output file**: correct dimensions, file exists, can be opened.
-6. **Send file directly** via Feishu using `MEDIA:/absolute/path`.
+2. **Check exact current-task requirements**: subject, action, date, place, audience, copy, ratio, style, brand/product constraints. Do not QA only against prior smoke-test examples.
+3. **Run semantic/logical QA** using `references/semantic-logic-qa.md`: verify that the scene actually makes sense — required subject/action/entities, spatial physics, anatomy/object structure, factual consistency, and audience fit.
+4. **Check artifacts**: watermarks, random letters, extra limbs, broken hands, distorted eyes, fake text, strange objects.
+5. **Check composition**: no important content cropped, no text collision, no unreadable contrast, no clutter.
+6. **Check output file**: correct dimensions, file exists, can be opened.
+7. **Send file directly** via Feishu using `MEDIA:/absolute/path`.
 
 ## Text and layout QA
 

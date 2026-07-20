@@ -62,6 +62,19 @@ If a poster feels “字体不高级/不自然/像系统字”, switch font fami
 - Keep mobile readability: small text must remain readable at phone size.
 - Avoid generic four-card SaaS layouts unless the requested style is explicitly tech/product briefing.
 
+## Background-aware typography matching
+
+When the route is `JuggernautXL/no-text visual → deterministic text layer`, never add text with a generic preset color/layout. Before rendering text, extract the visual system from the generated image:
+
+1. **Palette** — sample dominant colors and choose text colors from the image palette or a deliberate complementary accent; avoid pure black/white unless the image style supports it.
+2. **Light direction and contrast** — match shadow/glow direction and softness to the scene; use subtle shadow, diffusion glow, or translucent wash instead of hard default outlines.
+3. **Material language** — choose whether text should feel like ink, paper label, glass panel, editorial title, engraved mark, sticker, or commercial badge. Do not mix them accidentally.
+4. **Negative space** — place text where the image already has visual breathing room; if there is no safe area, regenerate the background with intentional blank space rather than forcing text on top.
+5. **Typography-template match** — choose a template family that matches the image mood: cinematic/editorial, product-commercial, cultural/ink, Y2K/sticker, tech/minimal, etc. Do not reuse one generic poster layout for every background.
+6. **Color harmony QA** — reject if the title color, chip color, card opacity, or layout blocks feel pasted on, even when the characters are technically correct.
+
+If user says “文字颜色/排版和画面不搭、很违和”, treat it as a background-aware typography failure. Redo with a matched visual system: sampled palette + mood-matched font + scene-aware placement + integrated panel/material. Do not merely change font size or swap one color.
+
 ## Text integration modes
 
 Choose one intentionally:

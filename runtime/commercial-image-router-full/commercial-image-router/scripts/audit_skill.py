@@ -15,11 +15,13 @@ except Exception:
 
 BASE = Path(__file__).resolve().parents[1]
 OS = __import__('os')
-RUNTIME_ROOT = Path(OS.environ.get('HERMES_IMAGE_RUNTIME', str(Path.home() / '.hermes-image-runtime')))
+RUNTIME_ROOT = Path(OS.environ.get('HERMES_IMAGE_RUNTIME', '/opt/data'))
 COMFY_HELPERS = Path(OS.environ.get('COMFY_HELPERS_DIR', str(RUNTIME_ROOT / 'comfy-helpers')))
 if not (COMFY_HELPERS / 'scripts' / 'check_deps.py').exists():
     for candidate in [
         BASE.parent / 'comfy-helpers',
+        Path('/opt/data/commercial-image-router-node-capability/runtime/commercial-image-router-full/comfy-helpers'),
+        Path('/opt/data/comfy-workspace/comfy-helpers'),
     ]:
         if (candidate / 'scripts' / 'check_deps.py').exists():
             COMFY_HELPERS = candidate
@@ -30,6 +32,8 @@ REQUIRED_REFS = [
     'ai-image-creation-sota-stack.md',
     'universal-routing-map.md',
     'quality-gates.md',
+    'text-and-product-poster-upgrade-rules.md',
+    'semantic-logic-qa.md',
     'local-runtime-status.md',
     'capability-backlog.md',
     'executable-workflows.md',
@@ -39,6 +43,8 @@ REQUIRED_REFS = [
     'product-poster-routing-lessons.md',
 ]
 REQUIRED_SCRIPTS = [
+    'render_invitation_card.py',
+    'render_text_poster.py',
     'sam_product_extract.py',
     'compose_product_poster.js',
     'make_inpaint_smoke_test.py',
@@ -52,6 +58,9 @@ REQUIRED_PHRASES = [
     'SAM ViT-B',
     'Noto CJK',
     'do not reproduce them exactly',
+    'semantic/logical QA',
+    'spatial physics',
+    'factual consistency',
 ]
 COMFY_WORKFLOWS = [
     'workflows/sdxl_txt2img.json',

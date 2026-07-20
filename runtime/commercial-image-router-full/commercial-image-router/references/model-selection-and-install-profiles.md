@@ -79,11 +79,20 @@ ComfyUI 在本 Skill 中负责：
 
 对用户来说，不需要打开或学习 ComfyUI；它只是底层引擎。
 
-## 安装 Profiles
+## 安装 profile
 
-### 默认：core-generate
+### 1. 默认：core-generate
 
-执行：
+用户转发仓库链接或直接运行安装器时，默认进入 `core-generate`。
+
+安装器必须先检查并复用已有环境：
+
+- 如果 `COMFY_WORKSPACE` 指向已有 ComfyUI，就使用它，不再强行新建一套；
+- 如果目标模型已经在当前 workspace 中且校验通过，就跳过下载；
+- 如果模型在 `COMFY_MODEL_DIRS`、`~/.hermes-image-runtime/comfy-workspace/models`、`~/ComfyUI/models`、`~/comfy-workspace/models` 等位置已存在，就软链接或复制到当前 runtime；
+- 只有找不到可用模型，或 JuggernautXL 这类带 sha256 校验的模型校验失败时，才重新下载。
+
+默认安装内容：
 
 ```bash
 python3 installer/install_commercial_image_router.py
