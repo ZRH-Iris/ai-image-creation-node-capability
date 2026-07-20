@@ -3,10 +3,13 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 import tarfile
 import tempfile
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -38,14 +41,41 @@ def runtime_dir_from_local() -> Path | None:
     return None
 
 
+def download_with_retry(url: str, dest: Path, attempts: int = 4):
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'hermes-ai-image-installer/1.1'})
+            with urllib.request.urlopen(req, timeout=90) as resp, dest.open('wb') as out:
+                shutil.copyfileobj(resp, out)
+            if dest.stat().st_size == 0:
+                raise RuntimeError('下载文件为空。')
+            return
+        except (urllib.error.URLError, TimeoutError, OSError, RuntimeError) as e:
+            last_error = e
+            if dest.exists():
+                try:
+                    dest.unlink()
+                except OSError:
+                    pass
+            if attempt < attempts:
+                wait = min(2 ** attempt, 10)
+                say(f'下载连接不稳定，正在重试 {attempt}/{attempts - 1}，等待 {wait} 秒。')
+                time.sleep(wait)
+    raise RuntimeError(f'下载安装文件失败：{last_error}')
+
+
 def download_repo_runtime() -> Path:
     url = os.environ.get('COMMERCIAL_IMAGE_ROUTER_REPO_ARCHIVE', DEFAULT_ARCHIVE_URL)
     tmp = Path(tempfile.mkdtemp(prefix='commercial-image-router-install-'))
     archive = tmp / 'repo.tar.gz'
     say('正在获取安装文件，请稍等。')
-    urllib.request.urlretrieve(url, archive)
+    download_with_retry(url, archive)
     with tarfile.open(archive, 'r:gz') as tf:
-        tf.extractall(tmp)
+        try:
+            tf.extractall(tmp, filter='data')
+        except TypeError:
+            tf.extractall(tmp)
     matches = list(tmp.glob('*/runtime/commercial-image-router-full/setup_runtime.sh'))
     if not matches:
         raise RuntimeError('安装包结构不完整，找不到图片处理运行环境。')
