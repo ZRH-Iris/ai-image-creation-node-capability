@@ -1,105 +1,106 @@
 # AI图片制作：当前本机高质量能力验收记录
 
-更新时间：2026-07-19
+更新时间：2026-07-20
 
-## 已确认安装/可用
+## 当前定稿路线
 
-### 1. ComfyUI 服务
+本 Skill 已从“图片工具全家桶”调整为清晰的 AI 图片制作路由器：
 
-- 地址：`http://127.0.0.1:8188`
-- 状态：已启动并可访问 `/system_stats` / `/object_info`
-- ComfyUI：`0.28.0`
-- 模板库：`comfyui-workflow-templates 0.11.11`
-- GPU：ComfyUI 识别到 NVIDIA GeForce RTX 5090 × 2
+- 默认安装：`core-generate`
+- 默认主模型：JuggernautXL v9
+- 默认安装内容：ComfyUI + PyTorch + JuggernautXL + 基础 SDXL/JuggernautXL txt2img workflow + smoke test
+- Qwen：不默认安装，作为中文短文案、古诗图、模型直写中文、中文指令理解/编辑的按需增强 profile
+- SDXL Base：兼容/兜底 profile
+- 旧版低质模型：不进入正式安装和推荐路线
 
-### 2. ComfyUI_LayerStyle
+## 为什么默认装 ComfyUI
 
-已安装并成功加载到 ComfyUI object_info。
+JuggernautXL 和 Qwen 都不是 Hermes 内置模型。它们需要一个本地模型运行器来：
 
-已确认节点包括：
+1. 加载模型 checkpoint / diffusion model / VAE / LoRA；
+2. 执行 txt2img、img2img、inpaint、upscale 等 workflow；
+3. 暴露本地 API，供 Hermes 自动提交任务并取回图片；
+4. 让用户不必手动学习 ComfyUI，Hermes 只把它当后端。
 
-- `LayerStyle: GradientOverlay`
-- `LayerStyle: Stroke`
-- `LayerStyle: DropShadow`
-- `LayerStyle: OuterGlow`
-- `LayerUtility: ColorImage`
-- `LoadImage`
-- `SaveImage`
+因此默认 core-generate 会安装 ComfyUI。不是让用户去操作 ComfyUI，而是让 Hermes 有一个稳定的本地生图引擎。
 
-### 3. 文字效果链路实跑结果
+## 本机算力确认
 
-已实跑：
+实时检查结果：
+
+- GPU：NVIDIA GeForce RTX 5090 × 2
+- 单卡显存：约 31.8GB
+- 总显存：约 63.6GB
+- CPU：AMD Ryzen 9 9950X3D，16 核 32 线程
+- RAM：59GB
+- `/opt/data` 剩余磁盘：约 383GB
+- Torch：`2.13.0+cu130`
+- CUDA available：True
+- CUDA device count：2
+
+结论：本机足够跑 JuggernautXL、SDXL Base、Qwen-Image-2512；Qwen 和大模型建议串行运行，不建议多模型并发。
+
+## 已验证：Skill / Runtime 审计
+
+命令：
+
+```bash
+HERMES_IMAGE_RUNTIME=/opt/data /opt/hermes/.venv/bin/python runtime/commercial-image-router-full/commercial-image-router/scripts/audit_skill.py runtime/commercial-image-router-full/commercial-image-router
+HERMES_IMAGE_RUNTIME=/opt/data /opt/hermes/.venv/bin/python runtime/commercial-image-router-full/commercial-image-router/scripts/audit_runtime.py runtime/commercial-image-router-full
+```
+
+结果：
 
 ```text
-可靠中文透明文字层 → LoadImage → LayerStyle GradientOverlay/Stroke/DropShadow/OuterGlow → SaveImage
+skill ok= True failed= 0 missing= []
+runtime ok= True failed= 0 missing= []
+```
+
+## 已验证：JuggernautXL core-generate smoke test
+
+命令使用默认 SDXL/JuggernautXL workflow：
+
+```bash
+/opt/data/comfy-venv/bin/python runtime/commercial-image-router-full/comfy-helpers/scripts/run_workflow.py \
+  --workflow runtime/commercial-image-router-full/comfy-helpers/workflows/sdxl_txt2img.json \
+  --args '{"ckpt_name":"Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors","prompt":"premium warm lifestyle poster background, commercial photography, clean composition, no text, no watermark","negative_prompt":"text, letters, watermark, logo, blurry, deformed, low quality","width":768,"height":960,"steps":12,"cfg":6,"sampler_name":"dpmpp_2m","scheduler":"karras","seed":20260720,"filename_prefix":"skill_core_juggernaut_smoke"}' \
+  --output-dir /opt/data/ai-image-skill-verify/juggernaut_smoke
 ```
 
 输出：
 
 ```text
-${HERMES_IMAGE_RUNTIME:-$HOME/.hermes-image-runtime}/qwen2512-layerstyle/layerstyle_svgtext_outputs/ai_image_creation_layerstyle_svgtext_00002_.png
+/opt/data/ai-image-skill-verify/juggernaut_smoke/skill_core_juggernaut_smoke_00001_.png
 ```
 
-视觉检查结果：
+视觉 QA：
 
-- 中文“AI图片制作”完整；
+- 成功生成暖色商业生活方式/摄影感背景；
+- 无文字；
+- 无水印；
 - 无乱码；
-- 无裁切；
-- 已有描边、阴影、金属/立体层；
-- 仍只是文字效果链路验证，不是完整海报成品；
-- 后续必须和成熟视觉模板/模型图结合，不能单独当成最终效果。
+- 无明显坏图；
+- 证明 core-generate 的 JuggernautXL txt2img 链路真实跑通。
 
-### 4. 官方 ComfyUI 模板库
+## 已验证：dry-run 安装
 
-已确认当前环境自带 179 个与 AI 图片制作相关的官方模板候选，包括：
+已用临时 `HERMES_HOME` 和 `HERMES_IMAGE_RUNTIME` 跑过安装器 dry-run：
 
-- Qwen Image / Qwen Image Edit / Qwen Image 2512
-- FLUX / FLUX Kontext / FLUX 2
-- OpenAI GPT Image 2 / GPT Image 1
-- Google Gemini / Nano Banana
-- ByteDance Seedream
-- Ideogram
-- Recraft
-- Product placement
-- Product ad
-- Product scene relight
-- Product swap
-- Image fix / product upscale
+```bash
+/opt/hermes/.venv/bin/python installer/install_commercial_image_router.py --dry-run
+```
 
-## 外部 API 型模板
+确认生成：
 
-这些效果上限接近 GPT/Gemini，但需要对应凭证：
+- `skills/creative/commercial-image-router/SKILL.md`
+- `references/model-selection-and-install-profiles.md`
+- `start_comfy.sh`
+- `run_smoke_test.sh`
+- placeholder smoke artifact
 
-- `api_openai_gpt_image_2_t2i.json`
-- `api_openai_gpt_image_2_image_edit.json`
-- `api_google_nano_banana2_text_to_image.json`
-- `api_google_nano_banana2_image_edit.json`
-- `templates-product_ad-v2.0.json`（Gemini）
-- `templates-product_scene_relight.json`（Seedream）
-- `api_recraft_v4_t2i.json`
-- `api_ideogram_v4_t2i.json`
+## 待完成
 
-若没有这些 API 凭证，不要假装能跑。必须走本地模型路线。
-
-## 本地模型路线
-
-优先安装并测试：
-
-### Qwen-Image-2512
-
-下载中/待完成：
-
-- `models/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors`
-- `models/vae/qwen_image_vae.safetensors`
-- `models/diffusion_models/qwen_image_2512_fp8_e4m3fn.safetensors`
-- `models/loras/Qwen-Image-2512-Lightning-4steps-V1.0-fp32.safetensors`
-
-目标：先跑通本地中文图像生成，再尝试和 LayerStyle 文字效果合成。
-
-## Skill 执行规则更新
-
-1. 用户说“效果不好 / 对标 GPT/Gemini / 找火的 / 找点赞高的”，不得继续本地手搓样张。
-2. 优先使用官方模板库、Qwen/FLUX/Seedream/Gemini/GPT Image/Recraft/Ideogram 等成熟路线。
-3. 没有 API 凭证时，明确说明外部 API 型模板不可跑，改用本地模型型模板。
-4. 中文标题最终不得依赖扩散模型直接生成，应走可靠中文字体透明图层 + LayerStyle/Figma/SVG/Satori 的确定性排版。
-5. 单独字效图不等于最终成品；必须和主视觉/商品/背景/版式一起验收。
+- GitHub commit/push
+- 公共 GitHub 链接验证
+- raw 安装命令验证
+- 最终把可转发安装话术发给用户

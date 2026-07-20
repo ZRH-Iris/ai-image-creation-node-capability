@@ -1,19 +1,49 @@
 name: ai-image-creation-node-capability
 display_name: AI图片制作
-version: 1.0.0
-description: 用户提供图片、商品图、人物照片、参考风格、标题文案或一句话需求后，Hermes 自动选择路线完成高质量图片生成、改图、商品图、海报、封面图、高清放大、换背景、抠图和中文排版。
+version: 1.1.0
+description: 用户提供图片、商品图、人物照片、参考风格、标题文案或一句话需求后，Hermes 自动选择路线完成高质量图片生成、改图、商品图、海报、封面图和中文排版。默认安装 core-generate：ComfyUI + PyTorch + JuggernautXL + 基础 txt2img workflow；Qwen 按需安装；SD1.5 删除。
 entry: AUTO_INSTALL_FOR_HERMES.md
 installer: installer/install_commercial_image_router.py
 runtime: runtime/commercial-image-router-full/setup_runtime.sh
 skill: commercial-image-router
+default_profile: core-generate
+profiles:
+  skill-only:
+    description: 只安装 Skill 和规则，不安装 ComfyUI 或模型。
+    installs: [skill]
+  core-generate:
+    description: 默认基础生图包，先让用户真正能生图。
+    installs: [skill, comfyui, pytorch, juggernaut_xl_v9, basic_txt2img_workflow, smoke_test]
+    approximate_model_download: 6.7GB
+  layout:
+    description: 可选中文排版层，用于准确标题、古诗、海报信息。
+    installs: [skill, node_svg_layout]
+  qwen:
+    description: 中文增强包，用于短中文图、古诗、中文文化场景、模型本身写中文和未来 Qwen-Image-Edit。
+    installs: [skill, comfyui, pytorch, qwen_image_2512, qwen_workflows]
+    approximate_model_download: 30GB+
+  creator:
+    description: JuggernautXL + Qwen + layout，适合重度做图用户。
+    installs: [skill, comfyui, pytorch, juggernaut_xl_v9, qwen_image_2512, node_svg_layout, workflows, smoke_test]
+  sdxl-base:
+    description: SDXL Base 兼容/fallback，不是主模型。
+    installs: [skill, comfyui, pytorch, sdxl_base]
+  full:
+    description: creator + SDXL Base；商品图/SAM/放大修复后续按需扩展。
+    installs: [skill, comfyui, pytorch, juggernaut_xl_v9, qwen_image_2512, sdxl_base, node_svg_layout, workflows, smoke_test]
+models:
+  primary: JuggernautXL v9
+  chinese_optional: Qwen-Image-2512
+  compatibility_optional: SDXL Base 1.0
+  removed: SD1.5
 usage:
   trigger_examples:
     - 帮我做一张封面图
     - 我发一张商品图，请做成商品宣传海报
-    - 把这张图片放大变清晰
     - 给这张图换一个高级背景，商品不要变形
     - 帮我做一张活动宣传图
-    - 修改这张图上的文字
+    - 生成一张小红书正能量图
+    - 生成一张古诗意境图
   required_inputs:
     - 图片处理任务可以只提供一句需求
     - 商品图建议提供清晰原图
@@ -23,6 +53,8 @@ safety:
   - 不制作冒充他人、欺骗身份或违法营销图片
   - 不未经授权使用他人肖像、品牌、商标或受版权保护素材
 notes:
-  - 商品主体默认保持真实，不让模型随意重画
-  - 中文文案默认由排版层处理，不依赖模型直接生成中文
+  - 默认安装先让用户能用 JuggernautXL 生图，而不是只装不可用的规则文档
+  - ComfyUI 是本地模型运行器/API 层，不是要求普通用户学习的软件
+  - Qwen 只在中文短文案、古诗、模型直写中文或中文编辑场景按需安装
+  - 中文文案必须准确时由排版层处理，不依赖模型直接生成中文
   - 对外发布图片必须做清晰度、裁切、文字可读性和主体一致性检查

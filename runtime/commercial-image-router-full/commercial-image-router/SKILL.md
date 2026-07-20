@@ -22,6 +22,7 @@ Core principle:
 
 Mandatory references before producing text-bearing images:
 
+- `references/model-selection-and-install-profiles.md` — final model roles and install profiles: JuggernautXL primary, Qwen on-demand, SD1.5 removed.
 - `references/implementation-stack.md` — model/tool/layout stack.
 - `references/quality-gates.md` — visual QA and rejection rules.
 - `references/typography-system.md` — font, hierarchy, poem inscription, and text-in-scene rules.
@@ -53,12 +54,11 @@ This Skill can be installed with the bundled full-runtime installer. In a distri
 - `COMFY_HELPERS_DIR` — helper workflow/script directory. Default: `$HERMES_IMAGE_RUNTIME/comfy-helpers`.
 - `COMFY_WORKSPACE` — ComfyUI checkout. Default: `$HERMES_IMAGE_RUNTIME/comfy-workspace`.
 - ComfyUI local endpoint: `http://127.0.0.1:8188`.
-- Expected installed checkpoints/support models after full setup:
-  - `models/checkpoints/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors` — verified high-quality SDXL-compatible route for product backgrounds/posters/cartoon-style visuals.
-  - `models/checkpoints/sd_xl_base_1.0.safetensors` — SDXL base, acceptable fallback/preview model.
-  - `image-models/sam/sam_vit_b_01ec64.pth` — SAM product segmentation.
-  - `models/upscale_models/4x-UltraSharp.pth` — verified 4× poster upscaler.
-- When a shareable runtime package is produced, validate it with the tarball validator script and also with a full `bash setup_runtime.sh --dry-run` rehearsal before claiming the package is ready.
+- Default install profile is `core-generate`: installs ComfyUI + PyTorch + JuggernautXL v9 + basic txt2img workflow and runs a smoke test. This is the minimal practical package that lets a recipient generate images immediately.
+- ComfyUI is required for local open-weight models because Hermes needs a model runner/API layer to load JuggernautXL/Qwen and execute workflows; end users do not need to learn ComfyUI.
+- Qwen is installed only by `--profile qwen` or `--profile creator/full`. Use it for short Chinese text images, poem/culture scenes, user-requested single-model Chinese text, and future Qwen-Image-Edit flows.
+- SDXL Base is optional compatibility/fallback via `--profile sdxl-base` or `full`; SD1.5 is removed from formal install/recommendation routes.
+- When a shareable runtime package is produced, validate it with the tarball validator script, run `bash setup_runtime.sh --dry-run`, and after GitHub deployment run the raw installer in a clean temp Hermes environment before claiming the package is ready.
 - GPT image generation via Hermes `image_generate` may fail if OpenAI/Codex auth returns 401. If that happens, do not keep retrying the same route; fall back to ComfyUI or repair the credential separately.
 
 For this machine's historical verification evidence, see `references/local-runtime-status.md`. For distribution packaging rules, see `references/runtime-distribution-packaging.md`.
@@ -72,6 +72,7 @@ This Skill is intentionally split into a small router plus supporting references
 - `references/quality-gates.md` — strict QA rules for text/layout, product fidelity, posters, avatars, animals/characters, repair/upscale, and iteration.
 - `references/implementation-stack.md` — mandatory model/segmentation/template/font stack for serious public-facing work.
 - `references/ai-image-creation-sota-stack.md` — current high-quality model/workflow priority list for AI图片制作: Qwen-Image, FLUX/Kontext, Step1X-Edit, HunyuanImage, AnyText2/Glyph, LayerStyle, and official ComfyUI product/poster templates. Load this before trying to improve visual quality or when the user says the result is not good enough.
+- `references/model-selection-and-install-profiles.md` — final install/model policy: default core-generate installs ComfyUI/PyTorch/JuggernautXL; Qwen is on-demand; SD1.5 removed.
 - `references/local-runtime-status.md` — what is actually installed and verified in this environment.
 - `references/qwen2512-layerstyle-route.md` — verified local route: Qwen-Image-2512 text-to-image + ComfyUI_LayerStyle Chinese title-art + ComfyUI mask compositing. Load this before poster/creative visual POCs when no GPT/Gemini image API is available.
 - `references/poster-typography-and-style-lessons.md` — session lessons for commercial poster typography/style: safe-width text pills, avoiding heavy title outlines for enterprise/product graphics, rejecting model-generated fake background text, and making “换个风格” a true visual-system change.
@@ -157,10 +158,10 @@ Before choosing tools, load `references/universal-routing-map.md` when the reque
 
 Prefer in this order when available:
 
-1. GPT/Gemini/OpenAI image editing API for high-level instruction-following and image edits, if auth is valid.
-2. ComfyUI with FLUX/JuggernautXL/RealVisXL/SDXL/Qwen routes, depending on installed models.
-3. SDXL base for acceptable previews and medium-quality tests.
-4. SD1.5 only for smoke tests or rough drafts.
+1. JuggernautXL via ComfyUI for default high-quality local generation, commercial backgrounds, product/lifestyle visuals, posters, and 小红书主视觉.
+2. Qwen-Image via ComfyUI for short Chinese text images, poem/cultural scenes, Chinese semantic prompts, and user-requested single-model Chinese text; install on demand.
+3. GPT/Gemini/OpenAI image editing API for high-level instruction-following and image edits, if auth is valid.
+4. SDXL Base only as compatibility/fallback; do not use SD1.5 for this Skill.
 
 ### Layout / typography
 
@@ -317,7 +318,7 @@ Useful projects found for this routing system:
 
 - If GPT image auth fails with 401, do not claim GPT image output was generated. Switch to ComfyUI or fix auth.
 - If ComfyUI server is down, start it and verify `/system_stats` before running workflows.
-- If only SD1.5 is available, label it as a rough/test route and recommend SDXL/FLUX/JuggernautXL/RealVisXL for commercial quality.
+- If the local runtime has no JuggernautXL/Qwen/SDXL-compatible model installed, do not fall back to SD1.5; install the proper profile or use a configured external image API.
 - If no professional template engine is connected, produce a functional draft but clearly treat typography as draft quality. For user-facing delivery, prioritize building/reusing a template first.
 - If the user rejects layout twice, stop iterating ad-hoc; switch method.
 

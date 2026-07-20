@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import os
-import shutil
 import subprocess
 import sys
 import tarfile
@@ -11,8 +11,9 @@ import urllib.request
 from pathlib import Path
 
 CAPABILITY_NAME = 'AI图片制作'
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 DEFAULT_ARCHIVE_URL = 'https://github.com/ZRH-Iris/ai-image-creation-node-capability/archive/refs/heads/main.tar.gz'
+VALID_PROFILES = {'skill-only', 'core-generate', 'layout', 'qwen', 'creator', 'sdxl-base', 'full'}
 
 
 def say(msg: str):
@@ -58,9 +59,27 @@ def find_runtime_dir() -> Path:
     return download_repo_runtime()
 
 
-def install():
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description='Install AI图片制作 capability for Hermes.')
+    parser.add_argument('--profile', default='core-generate', choices=sorted(VALID_PROFILES), help='Install profile. Default: core-generate')
+    parser.add_argument('--dry-run', action='store_true', help='Simulate install without downloading large files')
+    parser.add_argument('--no-smoke-test', action='store_true', help='Skip smoke test')
+    parser.add_argument('--skip-model-download', action='store_true', help='Install runtime/workflows but skip model downloads')
+    parser.add_argument('--install-skill-only', action='store_true', help='Compatibility alias for --profile skill-only')
+    return parser.parse_args(argv)
+
+
+def install(args: argparse.Namespace):
+    profile = 'skill-only' if args.install_skill_only else args.profile
     say('收到，正在为你安装「AI图片制作」能力。')
-    say('我会自动完成准备和验证，你暂时不需要做任何技术操作。')
+    say(f'安装 profile：{profile}')
+    if profile == 'core-generate':
+        say('默认会安装 ComfyUI、PyTorch、JuggernautXL 和基础生图 workflow，并做 smoke test。')
+        say('Qwen 不会默认安装；需要中文短文案/古诗/模型直写中文时可再按需安装。')
+    elif profile == 'qwen':
+        say('将安装 Qwen 中文增强能力，模型较大，约 30GB+。')
+    elif profile == 'skill-only':
+        say('将只安装 Skill/路由规则，不安装 ComfyUI 或模型。')
     runtime = find_runtime_dir()
     setup = runtime / 'setup_runtime.sh'
     if not setup.exists():
@@ -68,31 +87,37 @@ def install():
     os.chmod(setup, 0o755)
     env = os.environ.copy()
     env.setdefault('COMMERCIAL_IMAGE_ROUTER_SOURCE', str(repo_root()))
-    # 默认完整安装；如调试可由环境变量传入额外参数。
+    cmd = ['bash', str(setup), f'--profile={profile}']
+    if args.dry_run or env.get('COMMERCIAL_IMAGE_RUNTIME_DRY_RUN') == '1':
+        cmd.append('--dry-run')
+    if args.no_smoke_test:
+        cmd.append('--no-smoke-test')
+    if args.skip_model_download:
+        cmd.append('--skip-model-download')
     extra = env.get('COMMERCIAL_IMAGE_ROUTER_INSTALL_ARGS', '').split()
-    if env.get('COMMERCIAL_IMAGE_RUNTIME_DRY_RUN') == '1' and '--dry-run' not in extra:
-        extra.append('--dry-run')
-    cmd = ['bash', str(setup)] + extra
+    cmd.extend(extra)
     run(cmd, cwd=str(runtime), env=env, quiet=False)
     say('')
-    say('「AI图片制作」已经安装成功，可以开始使用了。')
+    if profile == 'skill-only':
+        say('「AI图片制作」Skill 已经安装成功。当前只安装了规则，没有安装本地生图模型。')
+    elif profile == 'qwen':
+        say('「AI图片制作」Qwen 中文增强能力已经安装成功。')
+    else:
+        say('「AI图片制作」基础生图能力已经安装成功，可以开始使用了。')
     say('')
     say('接下来你可以直接发给我：')
-    say('1. 一张要处理的图片，或一句想生成图片的需求；')
-    say('2. 标题、文案、尺寸或风格要求；')
-    say('3. 如果是商品图，请尽量发清晰原图，并说明哪些内容必须保持不变。')
+    say('1. 一句想生成图片的需求；')
+    say('2. 一张要处理的图片；')
+    say('3. 标题、文案、尺寸或风格要求。')
     say('')
-    say('你可以这样说：')
-    say('“我发一张商品图，请帮我做成宣传海报，商品不要变形。”')
-    say('或者：')
-    say('“帮我做一张活动海报，标题是……，文案是……。”')
-    say('')
-    say('以后再次使用时，不需要重新安装，直接说你的图片需求即可。')
+    say('默认主模型是 JuggernautXL，适合高质感主视觉和商业氛围图。')
+    say('如果之后要做短中文小红书图、古诗图，或明确要模型自己写中文，我会按需安装 Qwen。')
 
 
-def main():
+def main(argv: list[str] | None = None):
+    args = parse_args(sys.argv[1:] if argv is None else argv)
     try:
-        install()
+        install(args)
     except Exception as e:
         print('', file=sys.stderr)
         print('「AI图片制作」暂时没有安装成功。', file=sys.stderr)

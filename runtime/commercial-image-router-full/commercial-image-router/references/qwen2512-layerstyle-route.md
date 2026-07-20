@@ -22,7 +22,7 @@ ${HERMES_IMAGE_RUNTIME:-$HOME/.hermes-image-runtime}/qwen2512-layerstyle/composi
 
 视觉验收：
 
-- 背景来自 Qwen-Image-2512 本地模型，不是 SDXL/SD1.5；
+- 背景来自 Qwen-Image-2512 本地模型，不是 SDXL 路线；
 - 无文字主视觉质量明显高于前面临时样张；
 - 中文标题完整，无乱码；
 - 标题有 LayerStyle 节点生成的描边/阴影/金属感；

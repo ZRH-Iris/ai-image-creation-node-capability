@@ -75,9 +75,8 @@ def checkpoint_status(host: str, headers: dict) -> dict:
 
 
 SMOKE_WORKFLOW = {
-    # Minimal SD1.5 workflow that doesn't depend on rare nodes.
-    # 256x256 + 1 step is the smallest config that doesn't trigger SDXL/Flux
-    # validation errors while still executing fast.
+    # Minimal checkpoint workflow that does not depend on rare custom nodes.
+    # 256x256 + 1 step is the smallest generic config for quick API submission checks.
     "3": {
         "class_type": "KSampler",
         "inputs": {

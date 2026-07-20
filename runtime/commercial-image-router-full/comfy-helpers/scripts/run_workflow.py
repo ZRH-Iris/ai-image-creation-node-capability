@@ -25,8 +25,8 @@ Usage:
         --args '{"prompt": "a cat", "seed": 42}' \
         --output-dir ./outputs
 
-    # Cloud server (API key from env var)
-    export COMFY_CLOUD_API_KEY="comfyui-xxxxxxx"
+    # Cloud server (API key from env var; never commit real credentials)
+    export COMFY_CLOUD_API_KEY="[REDACTED]"
     python3 run_workflow.py --workflow workflow_api.json \
         --args '{"prompt": "a cat"}' \
         --host https://cloud.comfy.org \

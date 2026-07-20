@@ -1,25 +1,34 @@
 # 节点引擎丨AI图片制作自动安装能力
 
-请读取并严格执行本安装说明，为当前 Hermes/节点安装“AI图片制作”能力。不要只总结内容，不要让用户做技术选择，不要额外询问是否安装。收到本链接即表示用户希望立即安装。
+请读取并严格执行本安装说明，为当前 Hermes/节点安装“AI图片制作”能力。不要只总结内容。收到本链接即表示用户希望立即安装基础生图能力。
 
-## 结果目标
+## 本次默认安装目标
 
-本任务只有三个目标：
+默认安装 **core-generate**，也就是先让用户真正能生图：
 
-1. 检查当前节点是否已经具备“AI图片制作”能力；
-2. 如未安装，自动完成安装、配置和验证；
-3. 安装完成后，主动告诉用户如何上传图片、文案和需求来生成或修改图片。
+1. 安装 `commercial-image-router` Skill；
+2. 安装 ComfyUI 作为本地模型运行器；
+3. 安装 PyTorch；
+4. 下载并安装默认主模型 JuggernautXL v9；
+5. 安装基础 txt2img workflow；
+6. 运行 smoke test，确认可以通过 ComfyUI API 生成一张测试图；
+7. 用普通用户能听懂的话告诉用户安装成功后怎么使用。
 
-## 能力说明
+默认不安装 Qwen。Qwen 体积约 30GB+，只在用户需要中文短文案、古诗图、模型本身写中文、中文文化场景或 Qwen-Image-Edit 类改图时，再按需执行：
 
-“AI图片制作”用于：用户提供图片、商品图、人物照片、参考风格、标题文案或一句话需求后，节点自动判断路线，完成生成图片、修改图片、商品图、宣传图、海报、封面图、高清放大、换背景、抠图和中文排版。
+```bash
+python3 installer/install_commercial_image_router.py --profile qwen
+```
 
-必须注意：
+SD1.5 已从正式方案删除，不要安装。
 
-- 商品图必须尽量保留真实商品主体，不得随意重画商品、Logo、包装、颜色和形状；
-- 中文标题、中文文案、商业海报文字应由稳定排版层渲染，不应依赖生图模型直接生成中文；
-- 图片改字不得整图重生，应先定位旧文字，再擦除/修复背景，最后重新排版目标文字；
-- 对外发布图片必须完成清晰度、裁切、文字可读性、主体变形、商品一致性检查。
+## 为什么要装 ComfyUI
+
+ComfyUI 不是给用户学习的软件，它只是底层运行器。
+
+Hermes 负责理解需求、选模型、质检和发送图片；JuggernautXL/Qwen 这类开放权重模型需要本地推理后端来加载模型、运行 workflow、输出图片。ComfyUI 提供这个本地 API 层。
+
+安装后用户不需要打开 ComfyUI，只需要继续在 Hermes 里说图片需求。
 
 ## 立即执行
 
@@ -27,7 +36,7 @@
 
 1. 打开当前 GitHub 仓库；
 2. 读取 `README.md`、`MANIFEST.yaml` 和 `installer/install_commercial_image_router.py`；
-3. 执行安装脚本：
+3. 执行默认安装脚本：
 
 ```bash
 python3 installer/install_commercial_image_router.py
@@ -53,18 +62,50 @@ subprocess.run(['python3', str(p)], check=True)
 PY
 ```
 
-## 安装脚本必须完成
+## 可选安装 profile
 
-安装脚本应自动完成：
+默认：
 
-1. 检查当前环境；
+```bash
+python3 installer/install_commercial_image_router.py
+```
+
+等同：
+
+```bash
+python3 installer/install_commercial_image_router.py --profile core-generate
+```
+
+只安装 Skill：
+
+```bash
+python3 installer/install_commercial_image_router.py --profile skill-only
+```
+
+按需安装 Qwen：
+
+```bash
+python3 installer/install_commercial_image_router.py --profile qwen
+```
+
+安装 JuggernautXL + Qwen + layout：
+
+```bash
+python3 installer/install_commercial_image_router.py --profile creator
+```
+
+## 安装脚本必须完成的验证
+
+安装脚本必须自动完成：
+
+1. 输出正在安装的 profile；
 2. 安装或更新 `commercial-image-router` Skill；
-3. 安装图片处理运行环境；
-4. 准备必要模型、字体、工作流和辅助工具；
-5. 写入 Hermes 可读的使用说明；
-6. 运行环境检查；
-7. 尽可能生成一张测试图片或测试标记验证能力可用；
-8. 将真实结果回复给用户。
+3. 安装 core-generate 所需运行环境；
+4. 下载 JuggernautXL；
+5. 写入启动脚本和 helper workflow；
+6. 启动/连接 ComfyUI；
+7. 通过基础 txt2img workflow 生成测试图；
+8. 如果 smoke test 失败，不得假装成功。
 
 ## 成功后必须回复用户
 
@@ -72,19 +113,14 @@ PY
 
 推荐回复：
 
-「AI图片制作」已经安装成功，可以开始使用了。
+「AI图片制作」基础生图能力已经安装成功，可以开始使用了。
 
-接下来你可以直接发给我：
-1. 一张要处理的图片，或一句想生成图片的需求；
-2. 标题、文案、尺寸或风格要求；
-3. 如果是商品图，请尽量发清晰原图，并说明哪些内容必须保持不变。
+现在默认可以使用 JuggernautXL 生成高质感图片。你可以直接发给我：
+1. 一句想生成图片的需求；
+2. 一张要处理的图片；
+3. 标题、文案、尺寸或风格要求。
 
-你可以这样说：
-“我发一张商品图，请帮我做成宣传海报，商品不要变形。”
-或者：
-“帮我做一张活动海报，标题是……，文案是……。”
-
-以后再次使用时，不需要重新安装，直接说你的图片需求即可。
+如果之后你要做短中文小红书图、古诗图，或者明确想让模型自己写中文，我会再按需安装 Qwen 中文增强能力。
 
 ## 失败时必须回复用户
 

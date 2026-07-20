@@ -1,29 +1,71 @@
 {
-  "name": "commercial-image-router-full-runtime",
-  "version": "1.0.0",
+  "name": "commercial-image-router-runtime",
+  "version": "1.1.0",
   "runtime_root_default": "~/.hermes-image-runtime",
+  "default_profile": "core-generate",
+  "profiles": {
+    "skill-only": {
+      "description": "Install Skill/routing rules only; no ComfyUI or models.",
+      "models": []
+    },
+    "core-generate": {
+      "description": "Default practical generation package: ComfyUI + PyTorch + JuggernautXL + basic txt2img workflow + smoke test.",
+      "models": ["juggernaut_xl_v9"]
+    },
+    "layout": {
+      "description": "Optional deterministic Chinese SVG/layout layer.",
+      "models": []
+    },
+    "qwen": {
+      "description": "On-demand Chinese generation/enhancement package.",
+      "models": ["qwen_text_encoder", "qwen_image_2512", "qwen_vae", "qwen_lightning_lora"]
+    },
+    "creator": {
+      "description": "JuggernautXL + Qwen + layout.",
+      "models": ["juggernaut_xl_v9", "qwen_text_encoder", "qwen_image_2512", "qwen_vae", "qwen_lightning_lora"]
+    },
+    "sdxl-base": {
+      "description": "Optional compatibility fallback.",
+      "models": ["sdxl_base"]
+    },
+    "full": {
+      "description": "Creator + SDXL Base compatibility fallback.",
+      "models": ["juggernaut_xl_v9", "qwen_text_encoder", "qwen_image_2512", "qwen_vae", "qwen_lightning_lora", "sdxl_base"]
+    }
+  },
   "models": {
     "juggernaut_xl_v9": {
+      "role": "primary",
       "path": "comfy-workspace/models/checkpoints/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors",
       "url": "https://huggingface.co/RunDiffusion/Juggernaut-XL-v9/resolve/main/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors?download=true",
       "sha256": "c9e3e68f89b8e38689e1097d4be4573cf308de4e3fd044c64ca697bdb4aa8bca",
       "size": 7105348188
     },
+    "qwen_text_encoder": {
+      "role": "chinese_optional",
+      "path": "comfy-workspace/models/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
+    },
+    "qwen_image_2512": {
+      "role": "chinese_optional",
+      "path": "comfy-workspace/models/diffusion_models/qwen_image_2512_fp8_e4m3fn.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_2512_fp8_e4m3fn.safetensors"
+    },
+    "qwen_vae": {
+      "role": "chinese_optional",
+      "path": "comfy-workspace/models/vae/qwen_image_vae.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors"
+    },
+    "qwen_lightning_lora": {
+      "role": "chinese_optional",
+      "path": "comfy-workspace/models/loras/Qwen-Image-2512-Lightning-4steps-V1.0-fp32.safetensors",
+      "url": "https://huggingface.co/lightx2v/Qwen-Image-2512-Lightning/resolve/main/Qwen-Image-2512-Lightning-4steps-V1.0-fp32.safetensors"
+    },
     "sdxl_base": {
+      "role": "compatibility_optional",
       "path": "comfy-workspace/models/checkpoints/sd_xl_base_1.0.safetensors",
       "url": "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors?download=true"
-    },
-    "sam_vit_b": {
-      "path": "image-models/sam/sam_vit_b_01ec64.pth",
-      "url": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth",
-      "sha256": "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912",
-      "size": 375042383
-    },
-    "upscale_4x_ultrasharp": {
-      "path": "comfy-workspace/models/upscale_models/4x-UltraSharp.pth",
-      "url": "https://huggingface.co/lokCX/4x-Ultrasharp/resolve/main/4x-UltraSharp.pth?download=true",
-      "sha256": "a5812231fc936b42af08a5edba784195495d303d5b3248c24489ef0c4021fe01",
-      "size": 66961958
     }
-  }
+  },
+  "removed_models": ["SD1.5"]
 }

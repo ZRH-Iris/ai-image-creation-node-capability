@@ -12,7 +12,7 @@ Install/use the best available route before claiming a serious result:
 - Image editing / preserving source: FLUX.1-Kontext, Qwen-Image-Edit, GPT/Gemini image editing APIs if auth is working.
 - Image text/editing: AnyText2 / ComfyUI_Anytext, or erase + deterministic re-typeset.
 
-SDXL base is only a preview route. SD1.5 is only a smoke-test route.
+SDXL Base is only a compatibility/fallback route. SD1.5 is removed from formal AI图片制作 routes.
 
 ### 2. Product/subject preservation
 

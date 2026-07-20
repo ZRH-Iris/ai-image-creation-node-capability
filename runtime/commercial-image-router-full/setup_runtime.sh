@@ -9,25 +9,74 @@ VENV="$RUNTIME/comfy-venv"
 HELPERS="$RUNTIME/comfy-helpers"
 LAYOUT="$RUNTIME/image-layout"
 HF_BASE="${HF_ENDPOINT:-https://huggingface.co}"
+PROFILE="core-generate"
 RUN_SMOKE=1
-DOWNLOAD_MODELS=1
-SKILL_ONLY=0
 DRY_RUN=0
+INSTALL_LAYOUT=0
+INSTALL_COMFY_STACK=1
+INSTALL_JUGGERNAUT=1
+INSTALL_QWEN=0
+INSTALL_SDXL_BASE=0
+INSTALL_SKILL_ONLY=0
+
+usage(){
+  cat <<'EOF'
+AI图片制作 runtime installer
+
+默认安装：--profile core-generate
+  安装 commercial-image-router Skill + ComfyUI + PyTorch + JuggernautXL + 基础 txt2img workflow，并运行 smoke test。
+
+Profiles:
+  --profile skill-only      只安装 Skill/规则，不装 ComfyUI/模型。
+  --profile core-generate  默认。装 ComfyUI/PyTorch/JuggernautXL/基础 txt2img workflow。
+  --profile layout         只加装 Node/SVG 中文排版层。
+  --profile qwen           装 ComfyUI/PyTorch/Qwen-Image-2512 workflow 和模型（约30GB+）。
+  --profile creator        装 core-generate + layout + Qwen。
+  --profile sdxl-base      在当前 ComfyUI 环境中加装 SDXL Base 兼容模型。
+  --profile full           装 creator + SDXL Base。商品图/SAM/放大修复后续按需扩展，不默认塞入。
+
+Other flags:
+  --dry-run                不下载大文件，模拟目录、Skill、smoke artifact。
+  --no-smoke-test          跳过 smoke test。
+  --skip-model-download    只装环境和 workflow，不下载模型。
+  --install-skill-only     兼容旧参数，等同 --profile skill-only。
+EOF
+}
 
 for arg in "$@"; do
   case "$arg" in
+    --help|-h) usage; exit 0 ;;
+    --profile=*) PROFILE="${arg#*=}" ;;
+    --profile) echo "Use --profile=name" >&2; exit 2 ;;
     --no-smoke-test) RUN_SMOKE=0 ;;
     --dry-run) DRY_RUN=1 ;;
-    --skip-model-download) DOWNLOAD_MODELS=0 ;;
-    --install-skill-only) SKILL_ONLY=1; RUN_SMOKE=0; DOWNLOAD_MODELS=0 ;;
-    *) echo "Unknown option: $arg" >&2; exit 2 ;;
+    --skip-model-download) INSTALL_JUGGERNAUT=0; INSTALL_QWEN=0; INSTALL_SDXL_BASE=0 ;;
+    --install-skill-only) PROFILE="skill-only" ;;
+    *) echo "Unknown option: $arg" >&2; usage >&2; exit 2 ;;
   esac
 done
 
-log(){ printf '\033[32m[commercial-image-runtime]\033[0m %s\n' "$*"; }
+case "$PROFILE" in
+  skill-only)
+    INSTALL_SKILL_ONLY=1; INSTALL_COMFY_STACK=0; INSTALL_JUGGERNAUT=0; INSTALL_QWEN=0; INSTALL_SDXL_BASE=0; INSTALL_LAYOUT=0; RUN_SMOKE=0 ;;
+  core-generate)
+    INSTALL_COMFY_STACK=1; INSTALL_JUGGERNAUT=1; INSTALL_QWEN=0; INSTALL_SDXL_BASE=0; INSTALL_LAYOUT=0 ;;
+  layout)
+    INSTALL_COMFY_STACK=0; INSTALL_JUGGERNAUT=0; INSTALL_QWEN=0; INSTALL_SDXL_BASE=0; INSTALL_LAYOUT=1; RUN_SMOKE=0 ;;
+  qwen)
+    INSTALL_COMFY_STACK=1; INSTALL_JUGGERNAUT=0; INSTALL_QWEN=1; INSTALL_SDXL_BASE=0; INSTALL_LAYOUT=0 ;;
+  creator)
+    INSTALL_COMFY_STACK=1; INSTALL_JUGGERNAUT=1; INSTALL_QWEN=1; INSTALL_SDXL_BASE=0; INSTALL_LAYOUT=1 ;;
+  sdxl-base)
+    INSTALL_COMFY_STACK=1; INSTALL_JUGGERNAUT=0; INSTALL_QWEN=0; INSTALL_SDXL_BASE=1; INSTALL_LAYOUT=0 ;;
+  full)
+    INSTALL_COMFY_STACK=1; INSTALL_JUGGERNAUT=1; INSTALL_QWEN=1; INSTALL_SDXL_BASE=1; INSTALL_LAYOUT=1 ;;
+  *) echo "Unknown profile: $PROFILE" >&2; usage >&2; exit 2 ;;
+esac
+
+log(){ printf '\033[32m[ai-image-runtime]\033[0m %s\n' "$*"; }
 warn(){ printf '\033[33m[warn]\033[0m %s\n' "$*"; }
 fail(){ printf '\033[31m[error]\033[0m %s\n' "$*" >&2; exit 1; }
-
 need_cmd(){ command -v "$1" >/dev/null 2>&1 || fail "Missing command: $1"; }
 
 install_skill(){
@@ -40,25 +89,27 @@ install_skill(){
 install_system_deps(){
   log "Checking system dependencies"
   if [ "$DRY_RUN" = "1" ]; then
-    warn "[dry-run] skipping apt installs and required command checks"
+    warn "[dry-run] skipping apt installs and command checks"
     return
   fi
   if command -v apt-get >/dev/null 2>&1; then
     if [ "$(id -u)" = "0" ]; then SUDO=""; else SUDO="sudo"; fi
     if command -v sudo >/dev/null 2>&1 || [ "$(id -u)" = "0" ]; then
       $SUDO apt-get update -qq || true
-      $SUDO apt-get install -y -qq git curl ca-certificates nodejs npm fonts-noto-cjk fonts-noto-cjk-extra || true
+      $SUDO apt-get install -y -qq git curl ca-certificates fonts-noto-cjk fonts-noto-cjk-extra || true
+      if [ "$INSTALL_LAYOUT" = "1" ]; then
+        $SUDO apt-get install -y -qq nodejs npm || true
+      fi
       fc-cache -f || true
     else
-      warn "apt found but sudo unavailable; install git/curl/node/npm/fonts-noto-cjk manually if missing."
+      warn "apt found but sudo unavailable; install git/curl and optional node/npm/fonts manually if missing."
     fi
   else
-    warn "Non-apt system: install git, curl, node/npm, and Noto CJK fonts manually if missing."
+    warn "Non-apt system: install git, curl, and Noto CJK fonts manually if missing."
   fi
   need_cmd git
   need_cmd curl
-  need_cmd node
-  need_cmd npm
+  if [ "$INSTALL_LAYOUT" = "1" ]; then need_cmd node; need_cmd npm; fi
 }
 
 install_uv(){
@@ -77,8 +128,8 @@ install_uv(){
 install_comfy(){
   mkdir -p "$RUNTIME"
   if [ "$DRY_RUN" = "1" ]; then
-    mkdir -p "$COMFY" "$VENV" "$RUNTIME/image-models/sam" "$RUNTIME/comfy-workspace/models/checkpoints" "$RUNTIME/comfy-workspace/models/upscale_models"
-    warn "[dry-run] prepared placeholder ComfyUI directories without cloning or installing packages"
+    mkdir -p "$COMFY" "$VENV" "$COMFY/models/checkpoints" "$COMFY/models/diffusion_models" "$COMFY/models/text_encoders" "$COMFY/models/vae" "$COMFY/models/loras"
+    warn "[dry-run] prepared placeholder ComfyUI directories"
     return
   fi
   if [ ! -d "$COMFY/.git" ]; then
@@ -90,19 +141,17 @@ install_comfy(){
   fi
   log "Creating Python venv at $VENV"
   uv venv --clear --python 3.12 "$VENV" || uv venv --clear "$VENV"
-  log "Installing PyTorch (tries cu130, cu128, cu121, then default)"
+  log "Installing PyTorch for local model inference"
   uv pip install --python "$VENV/bin/python" torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130 \
     || uv pip install --python "$VENV/bin/python" torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 \
     || uv pip install --python "$VENV/bin/python" torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 \
     || uv pip install --python "$VENV/bin/python" torch torchvision torchaudio
   log "Installing ComfyUI requirements"
   uv pip install --python "$VENV/bin/python" -r "$COMFY/requirements.txt"
-  log "Installing SAM/segmentation Python deps"
-  uv pip install --python "$VENV/bin/python" git+https://github.com/facebookresearch/segment-anything.git opencv-python-headless pycocotools pillow numpy
 }
 
 install_helpers(){
-  log "Installing helper workflows/scripts into $HELPERS"
+  log "Installing ComfyUI helper workflows/scripts into $HELPERS"
   mkdir -p "$HELPERS"
   rm -rf "$HELPERS/scripts" "$HELPERS/workflows"
   cp -a "$ROOT_DIR/comfy-helpers/scripts" "$HELPERS/scripts"
@@ -111,7 +160,10 @@ install_helpers(){
 }
 
 install_layout(){
-  log "Installing Node/SVG layout runtime into $LAYOUT"
+  if [ "$INSTALL_LAYOUT" != "1" ]; then
+    return 0
+  fi
+  log "Installing optional Node/SVG layout runtime into $LAYOUT"
   mkdir -p "$LAYOUT"
   if [ "$DRY_RUN" = "1" ]; then
     warn "[dry-run] skipping npm layout installs; directory created at $LAYOUT"
@@ -156,24 +208,29 @@ download_file(){
   log "Downloading $name"
   log "$final_url"
   curl -L --fail --retry 8 --retry-delay 5 --continue-at - -o "$dest" "$final_url"
-  if [ -n "$sha" ]; then
-    echo "$sha  $dest" | sha256sum -c -
-  fi
+  if [ -n "$sha" ]; then echo "$sha  $dest" | sha256sum -c -; fi
 }
 
 install_models(){
-  if [ "$DOWNLOAD_MODELS" = "0" ]; then warn "Skipping model downloads"; return; fi
-  download_file "JuggernautXL v9" "comfy-workspace/models/checkpoints/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors" \
-    "https://huggingface.co/RunDiffusion/Juggernaut-XL-v9/resolve/main/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors?download=true" \
-    "c9e3e68f89b8e38689e1097d4be4573cf308de4e3fd044c64ca697bdb4aa8bca"
-  download_file "SDXL base fallback" "comfy-workspace/models/checkpoints/sd_xl_base_1.0.safetensors" \
-    "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors?download=true" ""
-  download_file "SAM ViT-B" "image-models/sam/sam_vit_b_01ec64.pth" \
-    "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth" \
-    "ec2df62732614e57411cdcf32a23ffdf28910380d03139ee0f4fcbe91eb8c912"
-  download_file "4x-UltraSharp" "comfy-workspace/models/upscale_models/4x-UltraSharp.pth" \
-    "https://huggingface.co/lokCX/4x-Ultrasharp/resolve/main/4x-UltraSharp.pth?download=true" \
-    "a5812231fc936b42af08a5edba784195495d303d5b3248c24489ef0c4021fe01"
+  if [ "$INSTALL_JUGGERNAUT" = "1" ]; then
+    download_file "JuggernautXL v9 primary model" "comfy-workspace/models/checkpoints/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors" \
+      "https://huggingface.co/RunDiffusion/Juggernaut-XL-v9/resolve/main/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors?download=true" \
+      "c9e3e68f89b8e38689e1097d4be4573cf308de4e3fd044c64ca697bdb4aa8bca"
+  fi
+  if [ "$INSTALL_SDXL_BASE" = "1" ]; then
+    download_file "SDXL base compatibility fallback" "comfy-workspace/models/checkpoints/sd_xl_base_1.0.safetensors" \
+      "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors?download=true" ""
+  fi
+  if [ "$INSTALL_QWEN" = "1" ]; then
+    download_file "Qwen text encoder" "comfy-workspace/models/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors" \
+      "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors" ""
+    download_file "Qwen VAE" "comfy-workspace/models/vae/qwen_image_vae.safetensors" \
+      "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors" ""
+    download_file "Qwen Image 2512 fp8" "comfy-workspace/models/diffusion_models/qwen_image_2512_fp8_e4m3fn.safetensors" \
+      "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_2512_fp8_e4m3fn.safetensors" ""
+    download_file "Qwen Image 2512 Lightning LoRA" "comfy-workspace/models/loras/Qwen-Image-2512-Lightning-4steps-V1.0-fp32.safetensors" \
+      "https://huggingface.co/lightx2v/Qwen-Image-2512-Lightning/resolve/main/Qwen-Image-2512-Lightning-4steps-V1.0-fp32.safetensors" ""
+  fi
 }
 
 write_launcher(){
@@ -193,7 +250,7 @@ export HERMES_IMAGE_RUNTIME="$RUNTIME"
 cd "$HELPERS"
 "$VENV/bin/python" scripts/run_workflow.py \
   --workflow workflows/sdxl_txt2img.json \
-  --args '{"ckpt_name":"Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors","prompt":"premium clean snowy landscape background for children winter camp poster, bright safe cheerful atmosphere, no text, no watermark","negative_prompt":"text, watermark, letters, logo, scary, deformed, low quality","width":768,"height":960,"steps":12,"cfg":6,"sampler_name":"dpmpp_2m","scheduler":"karras","seed":20260719,"filename_prefix":"commercial_router_smoke"}' \
+  --args '{"ckpt_name":"Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors","prompt":"premium warm lifestyle poster background, commercial photography, clean composition, no text, no watermark","negative_prompt":"text, letters, watermark, logo, blurry, deformed, low quality","width":768,"height":960,"steps":12,"cfg":6,"sampler_name":"dpmpp_2m","scheduler":"karras","seed":20260720,"filename_prefix":"ai_image_creation_core_smoke"}' \
   --output-dir "$RUNTIME/smoke-test-output"
 EOF
   chmod +x "$RUNTIME/run_smoke_test.sh"
@@ -201,25 +258,23 @@ EOF
 
 run_smoke(){
   if [ "$RUN_SMOKE" = "0" ]; then return; fi
+  if [ "$INSTALL_JUGGERNAUT" != "1" ]; then
+    warn "Smoke test skipped: default smoke uses JuggernautXL; selected profile does not install it."
+    return
+  fi
   if [ "$DRY_RUN" = "1" ]; then
     mkdir -p "$RUNTIME/commercial-image-runtime-tests/router-regression"
     python3 - <<PY
 import pathlib, zlib, struct
-
 out = pathlib.Path('$RUNTIME') / 'commercial-image-runtime-tests/router-regression/router_regression_bg_00001_.png'
 width, height = 16, 16
-r, g, b = 200, 200, 200
-
-def chunk(chunk_type, data):
-    c = chunk_type + data
-    return struct.pack('>I', len(data)) + c + struct.pack('>I', zlib.crc32(c) & 0xFFFFFFFF)
-
+raw = b''.join([b'\x00' + bytes([200, 200, 200]) * width for _ in range(height)])
+def chunk(t, d):
+    c = t + d
+    return struct.pack('>I', len(d)) + c + struct.pack('>I', zlib.crc32(c) & 0xFFFFFFFF)
 with out.open('wb') as f:
     f.write(b'\x89PNG\r\n\x1a\n')
     f.write(chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0)))
-    raw = b''
-    for _ in range(height):
-        raw += b'\x00' + bytes([r, g, b]) * width
     f.write(chunk(b'IDAT', zlib.compress(raw)))
     f.write(chunk(b'IEND', b''))
 print(out)
@@ -227,11 +282,11 @@ PY
     warn "[dry-run] wrote placeholder smoke-test artifact"
     return
   fi
-  log "Running smoke test. Starting ComfyUI in background if needed."
+  log "Running JuggernautXL smoke test through ComfyUI API"
   if ! curl -sS --max-time 3 http://127.0.0.1:8188/system_stats >/dev/null; then
     "$RUNTIME/start_comfy.sh" > "$RUNTIME/comfy.log" 2>&1 &
     pid=$!
-    for i in $(seq 1 60); do
+    for _ in $(seq 1 60); do
       if curl -sS --max-time 3 http://127.0.0.1:8188/system_stats >/dev/null; then break; fi
       sleep 2
     done
@@ -242,24 +297,26 @@ PY
 }
 
 main(){
-  log "Installing commercial-image-router full runtime"
+  log "Installing AI图片制作 runtime profile=$PROFILE"
   log "HERMES_HOME=$HERMES_HOME"
   log "HERMES_IMAGE_RUNTIME=$RUNTIME"
   install_skill
-  if [ "$SKILL_ONLY" = "1" ]; then
-    log "Skill-only install complete. Full runtime install skipped by --install-skill-only."
+  if [ "$INSTALL_SKILL_ONLY" = "1" ]; then
+    log "Skill-only install complete. Runtime install skipped."
     return
   fi
   install_system_deps
-  install_uv
-  install_comfy
-  install_helpers
+  if [ "$INSTALL_COMFY_STACK" = "1" ]; then
+    install_uv
+    install_comfy
+    install_helpers
+    install_models
+    write_launcher
+  fi
   install_layout
-  install_models
-  write_launcher
   run_smoke
   log "Done. In Hermes: /reload-skills then /skill commercial-image-router"
-  log "Runtime launcher: $RUNTIME/start_comfy.sh"
+  log "ComfyUI launcher: $RUNTIME/start_comfy.sh"
 }
 
 main "$@"

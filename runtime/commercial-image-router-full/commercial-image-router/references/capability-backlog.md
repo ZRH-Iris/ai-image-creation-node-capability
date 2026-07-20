@@ -6,7 +6,7 @@ This file separates what is already verified from what still needs installation/
 
 - ComfyUI local server workflow execution.
 - JuggernautXL checkpoint for high-quality SDXL-compatible backgrounds/illustrations.
-- SDXL base fallback and SD1.5 smoke-test checkpoint.
+- SDXL Base fallback. SD1.5 has been removed from formal install/recommendation routes.
 - SAM ViT-B segmentation for product cutouts with foreground/background prompt points.
 - Node/sharp/SVG deterministic layout templates.
 - Noto CJK fonts installed for Chinese typography.

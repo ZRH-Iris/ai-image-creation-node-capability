@@ -337,7 +337,7 @@ def classify(gpu: dict | None, ram_gb: float, free_disk_gb: float, *, wsl: bool,
             notes.append(
                 f"{gen_str} with {mem} GB unified memory — below the {MIN_MAC_RAM_GB} GB practical minimum."
             )
-            notes.append("SD1.5 may work; SDXL/Flux will swap or OOM. Recommend Comfy Cloud.")
+            notes.append("Small legacy diffusion models may work; SDXL/Flux will swap or OOM. Recommend Comfy Cloud.")
             return "cloud", "comfy-cloud", notes
         if mem < OK_MAC_RAM_GB:
             notes.append(
@@ -362,7 +362,7 @@ def classify(gpu: dict | None, ram_gb: float, free_disk_gb: float, *, wsl: bool,
         return "cloud", "comfy-cloud", notes
     if vram < OK_VRAM_GB:
         notes.append(
-            f"{name} ({vram} GB VRAM) — SD1.5 works, SDXL tight, Flux/video unlikely."
+            f"{name} ({vram} GB VRAM) — small legacy diffusion models may work; SDXL tight, Flux/video unlikely."
         )
         return "marginal", gpu["vendor"], notes
     if vram < GREAT_VRAM_GB:
